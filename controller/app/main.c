@@ -52,7 +52,7 @@ int main(void) {
 UCB1CTLW0 &= ~UCSWRST;
 controller_init();
 ADC_init();
-temp_init();
+plant_temp_init();
 
 __bis_SR_register(GIE);  // Enable global interrupts
 

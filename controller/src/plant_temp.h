@@ -7,6 +7,6 @@
 
 // Function prototype
 
-void temp_init();
+void plant_temp_init();
 int read_plant_temp();
 #endif
