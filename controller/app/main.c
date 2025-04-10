@@ -44,7 +44,13 @@ volatile float temperature_C = 0.0;  // Stores calculated temperature
 volatile uint8_t samples_collected = 0;  // Tracks how many samples have been collecte
 
 //--------------------- Plant temp variables -----------------------------------
-volatile int current_temp=0;
+volatile unsigned int plant_value;                // Stores raw ADC reading (0-4095)
+volatile uint16_t plant_samples[MAX_WINDOW_SIZE];  // Array to store ADC readings
+volatile uint32_t plant_sum = 0;  // Sum of the last 'window_size' samples
+volatile uint8_t plant_index = 0;  // Index for circular buffer
+volatile float plant_temperature_C = 0.0;  // Stores calculated temperature
+volatile uint8_t plant_samples_collected = 0;  // Tracks how many samples have been collecte
+
 //------------------------------------------------------------------------------
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;                   // Stop watchdog timer
@@ -64,11 +70,9 @@ __bis_SR_register(GIE);  // Enable global interrupts
 * Depending on the button pressed
 */
     while (1) {
-        __delay_cycles(1000000);
- current_temp = read_plant_temp();
+
 
 /*
-
 //--Locked                                 // While Locked variable is set  
         while (locked == 1) {              // Set led bar off and scan keypad
             if(SetOnce==1){
@@ -80,14 +84,14 @@ __bis_SR_register(GIE);  // Enable global interrupts
             rgb_control(1);
             locked = unlock_keypad();
         }
-
+*/locked=0;
 //--Unlocked                               // When locked variable is not set
         while (locked == 0) {              // continually scan keypad and tx
             rgb_control(3);                // Based on button press
             relock = led_pattern();
 
 /* Set packet for tx, transmit, briefly change LED to green */
-/*
+
             switch(relock){
                 case 0: UCB1I2CSA = 0x0069; Packet[0]=0x00; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
 	                    for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
@@ -192,7 +196,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                     break;
             }
         }
-*/
+
     }
 
     return 0;
@@ -218,29 +222,27 @@ __interrupt void Timer_B_ISR(void) {
     TB0CCTL0 &= ~CCIFG;  // Clear interrupt flag
 }
 
-/*IRS for reading ADC temperature*/
+/*ISR for reading ADC temperature, triggers every 0.5s from other ISR*/
 #pragma vector = ADC_VECTOR
 __interrupt void ADC_ISR(void)
 {
-    adc_value = ADCMEM0;  // Read ADC result
+    // Read plant and ambient temperature
+    adc_value = ADCMEM0;  
+    plant_value = read_plant_temp();
 
+// ADC into moving average logic
    // Subtract the oldest sample from sum
     adc_sum -= adc_samples[sample_index];
-
     // Store new sample in array
     adc_samples[sample_index] = adc_value;
-
     // Add new sample to sum
     adc_sum += adc_value;
-
     // Move to next index, wrap around if necessary
     sample_index = (sample_index + 1) % window_size;
-
     // Ensure we have enough samples before averaging
     if (samples_collected < window_size) {
         samples_collected++;
     }
-
     // Calculate rolling average temperature (once enough samples are collected)
     if (samples_collected == window_size) {
         float conversion_factor = 20.05 / 2047;
@@ -248,5 +250,27 @@ __interrupt void ADC_ISR(void)
         Send_ADC(temperature_C);
     
     }
+// Plant into moving average logic
+// ADC into moving average logic
+   // Subtract the oldest sample from sum
+    plant_sum -= plant_samples[plant_index];
+    // Store new sample in array
+    plant_samples[plant_index] = plant_value;
+    // Add new sample to sum
+    plant_sum += plant_value;
+    // Move to next index, wrap around if necessary
+    plant_index = (plant_index + 1) % window_size;
+    // Ensure we have enough samples before averaging
+    if (plant_samples_collected < window_size) {
+        plant_samples_collected++;
+    }
+    // Calculate rolling average temperature (once enough samples are collected)
+    if (plant_samples_collected == window_size) {
+        
+        plant_temperature_C = (plant_sum/window_size);
+        Send_ADC(plant_temperature_C);
+    
+    }
+
 
 }
