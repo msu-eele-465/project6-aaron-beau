@@ -29,7 +29,7 @@ int locked = 1;                                 // Locked Boolean
 int relock = 0;                                 // Toggle to relock
 volatile uint8_t *txData;                       // Pointer to data buffer
 int SetOnce=1;                                  // Variable to trigger Tx once
-int window_size = 3;
+int window_size = 8;
 int window_size_unset;
 //---------------------- i2c Variables -----------------------------------------
 volatile char Packet[] = {0x00};                         // Tx Packet
