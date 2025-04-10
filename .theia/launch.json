@@ -9,6 +9,24 @@
                 "name": "controller",
                 "resourceId": "/controller"
             }
+        },
+        {
+            "name": "LCD",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "LCD",
+                "resourceId": "/LCD"
+            }
+        },
+        {
+            "name": "LCD (1)",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "LCD",
+                "resourceId": "/LCD/app/main.c"
+            }
         }
     ]
 }
