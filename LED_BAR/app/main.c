@@ -28,7 +28,7 @@ int pattnum3 = 0;                           // Pattern counter 3
 int temp = 0;                               // Temporary storage for pattern
 volatile static uint8_t lightbar_byte = 0;  // Stores lightbar data (volatile for ISR)
 static int time_cntl = 0;                   // Controls pattern timing
-static int base_time;                       // Base time for pattern timing
+static int base_time=3;                       // Base time for pattern timing
 int barcounter = 0;                         // Counter for bar updates
 static int status = 10;                     // Status indicator
 volatile int wait;
@@ -110,7 +110,6 @@ int main(void)
                     break;
                 case 0x1:                    // Heating
                     stepnum = lightbar(stepnum, pattspec, lightbar_byte);
-                    base_time = 1;
                     temp = pattspec;
                     if(stepnum==0){
                         pattspec=0;
@@ -118,7 +117,6 @@ int main(void)
                     break;
                 case 0x2:                    // Cooling
                     stepnum = lightbar(stepnum, pattspec, lightbar_byte);
-                    base_time = 1;
                     temp = pattspec;
                     if(stepnum==0){
                         pattspec=0;
@@ -177,16 +175,8 @@ __interrupt void EUSCI_B0_ISR(void)
             if(Received == 0xB){
                 wait = 1;
             }
-        //-- Handle specific pattern resets if same button pressed
-            if (Received == pattspec && Received == 2) {
-                pattnum1 = 0;
-            } else if (Received == pattspec && Received == 3) {
-                lightbar_byte = 0;
-            } else if (Received == pattspec && Received == 4) {
-                pattnum3 = 0;
-            }
-            break;
-        
+            pattspec=Received;
+            
         case 0x12:                        // UCSTPIFG: Stop condition detected
             UCB0IFG &= ~UCSTPIFG;         // Clear STOP flag
             break;
