@@ -30,19 +30,4 @@ void plant_temp_init(){
 
 }
 
-int read_plant_temp(){
-    UCB1I2CSA = 0x48;                              // I2C address
 
-    UCB1CTLW0 &= ~UCTR;                            // Receiver mode
-    UCB1CTLW0 |= UCTXSTT;                          // Generate START condition
-
-    //while (UCB1CTLW0 & UCTXSTT);                   // Wait for start to complete
-    //while (!(UCB1IFG & UCRXIFG));                  // Wait for RX buffer full
-
-    int temp = UCB1RXBUF;                          // Read one byte
-
-    UCB1CTLW0 |= UCTXSTP;                          // Send STOP condition
-    //while (UCB1CTLW0 & UCTXSTP);                   // Wait for STOP to complete
-
-    return temp;
-}

@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-* Project 6:Controlling a plant with the main controller and I2C
+* Project 6: Controlling a plant with the main controller and I2C
 * Aaron Foster & Beau Coburn
 * EELE 465
 * 4/3/25
@@ -7,8 +7,9 @@
 * Main file for the controller msp. receives
 * a character from the keypad to unlock. Later receives
 * characters from the keypad and transmits commands to 
-* the peripherals. Also reads LM92 temperature sensor and sends output to 
-* LCD microcontroller as well as plant to adjust temperature accordingly
+* the peripherals. Also reads LM92 digital temperature sensor and LM19 analog 
+* temperature sensor and sends output to LCD microcontroller as well as plant 
+* to adjust temperature accordingly.
 *///----------------------------------------------------------------------------
 
 
@@ -29,28 +30,29 @@ int locked = 1;                                 // Locked Boolean
 int relock = 0;                                 // Toggle to relock
 volatile uint8_t *txData;                       // Pointer to data buffer
 int SetOnce=1;                                  // Variable to trigger Tx once
-int window_size = 8;
+int window_size = 3;
 int window_size_unset;
 //---------------------- i2c Variables -----------------------------------------
 volatile char Packet[] = {0x00};                         // Tx Packet
 int Data_Cnt = 0;                               // Used for multiple bytes sent
 int i;                                          // Delay counter variable
 //---------------------- ADC Variables -----------------------------------------
-volatile unsigned int adc_value;                // Stores raw ADC reading (0-4095)
-volatile uint16_t adc_samples[MAX_WINDOW_SIZE];  // Array to store ADC readings
-volatile uint32_t adc_sum = 0;  // Sum of the last 'window_size' samples
-volatile uint8_t sample_index = 0;  // Index for circular buffer
-volatile float temperature_C = 0.0;  // Stores calculated temperature
-volatile uint8_t samples_collected = 0;  // Tracks how many samples have been collecte
+volatile unsigned int adc_value;              // Stores raw ADC reading (0-4095)
+volatile uint16_t adc_samples[MAX_WINDOW_SIZE]; // Array to store ADC readings
+volatile uint32_t adc_sum = 0;          // Sum of the last 'window_size' samples
+volatile uint8_t sample_index = 0;              // Index for circular buffer
+volatile float temperature_C = 0.0;             // Stores calculated temperature
+volatile uint8_t samples_collected = 0;         // Tracks how many samples
+                                                // have been collected
 
 //--------------------- Plant temp variables -----------------------------------
-volatile unsigned int plant_value;                // Stores raw ADC reading (0-4095)
-volatile uint16_t plant_samples[MAX_WINDOW_SIZE];  // Array to store ADC readings
-volatile uint32_t plant_sum = 0;  // Sum of the last 'window_size' samples
-volatile uint8_t plant_index = 0;  // Index for circular buffer
-volatile float plant_temperature_C = 0.0;  // Stores calculated temperature
-volatile uint8_t plant_samples_collected = 0;  // Tracks how many samples have been collecte
-
+volatile unsigned int plant_value;            // Stores raw ADC reading (0-4095)
+volatile uint16_t plant_samples[MAX_WINDOW_SIZE];// Array to store ADC readings
+volatile uint32_t plant_sum = 0;         // Sum of the last 'window_size' samples
+volatile uint8_t plant_index = 0;               // Index for circular buffer
+volatile float plant_temperature_C = 0.0;       // Stores calculated temperature
+volatile uint8_t plant_samples_collected = 0;   // Tracks how many samples 
+                                                // have been collected
 //------------------------------------------------------------------------------
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;                   // Stop watchdog timer
@@ -72,7 +74,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
     while (1) {
 
 
-/*
+
 //--Locked                                 // While Locked variable is set  
         while (locked == 1) {              // Set led bar off and scan keypad
             if(SetOnce==1){
@@ -84,7 +86,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
             rgb_control(1);
             locked = unlock_keypad();
         }
-*/locked=0;
+
 //--Unlocked                               // When locked variable is not set
         while (locked == 0) {              // continually scan keypad and tx
             rgb_control(3);                // Based on button press
@@ -93,12 +95,12 @@ __bis_SR_register(GIE);  // Enable global interrupts
 /* Set packet for tx, transmit, briefly change LED to green */
 
             switch(relock){
-                case 0: UCB1I2CSA = 0x0069; Packet[0]=0x00; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
+                case 0: UCB1I2CSA = 0x0069; Packet[0]=0x00; UCB1CTLW0 |= UCTR; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
 	                    for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
                         rgb_control(2); __delay_cycles(500000); 
                         break;
 
-                case 1: UCB1I2CSA = 0x0069; Packet[0]=0x01; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
+                case 1: UCB1I2CSA = 0x0069; Packet[0]=0x01; UCB1CTLW0 |= UCTR; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
                         rgb_control(2); __delay_cycles(500000); 
                         if(window_size_unset == 1){
@@ -107,12 +109,14 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          }
                         break;
 
-                case 2: UCB1I2CSA = 0x0069; Packet[0]=0x02; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
+                case 2: UCB1I2CSA = 0x0069; Packet[0]=0x02; UCB1CTLW0 |= UCTR; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT;
                         rgb_control(2); __delay_cycles(500000); 
                         if(window_size_unset == 1){
                             window_size = 2;
                             window_size_unset = 0;
+                            //Dont forget transmit mode for other cases "UCB1CTLW0 |= UCTR;"
+                            //If needed
                          }
                         break;
                         
@@ -201,6 +205,8 @@ __bis_SR_register(GIE);  // Enable global interrupts
 
     return 0;
 }
+
+//------------------------------------------------------------------------------
 //------------------Interrupt Service Routines----------------------------------
 /* ISR for I2C, iterates through Packet for each variable to be sent*/
 #pragma vector = USCI_B1_VECTOR
@@ -213,32 +219,44 @@ __interrupt void USCI_B1_ISR(void) {
         Data_Cnt++;
     }
 }
-// Timer_B ISR - Triggers ADC every 0.5s
+//-- Timer_B ISR Triggers temperature reading every 0.5s----------------------
 #pragma vector = TIMER0_B0_VECTOR
 __interrupt void Timer_B_ISR(void) {
    if(locked == 0){
-    ADCCTL0 |= ADCENC | ADCSC;  // Start ADC conversion
+
+
+//-- Plant temp conversation
+    UCB1I2CSA = 0x48;                              // address 
+    UCB1CTLW0 &= ~UCTR;                            // Receiver mode
+    UCB1CTLW0 |= UCTXSTT;                          // Start
+    plant_value = UCB1RXBUF;                       // Read one byte
+    UCB1CTLW0 |= UCTXSTP;                          // Send STOP condition
+//-- ADC conversation (call ISR)
+    ADCCTL0 |= ADCENC | ADCSC;
    }
-    TB0CCTL0 &= ~CCIFG;  // Clear interrupt flag
+    TB0CCTL0 &= ~CCIFG;                            // Clear interrupt flag
 }
+
 
 /*ISR for reading ADC temperature, triggers every 0.5s from other ISR*/
 #pragma vector = ADC_VECTOR
 __interrupt void ADC_ISR(void)
 {
-    // Read plant and ambient temperature
+                                // Read plant and ambient temperature
     adc_value = ADCMEM0;  
-    plant_value = read_plant_temp();
 
-// ADC into moving average logic
-   // Subtract the oldest sample from sum
-    adc_sum -= adc_samples[sample_index];
-    // Store new sample in array
-    adc_samples[sample_index] = adc_value;
-    // Add new sample to sum
-    adc_sum += adc_value;
+
+//-- ADC into moving average logic
+   
+    adc_sum -= adc_samples[sample_index];  // Subtract the oldest sample from sum
+    
+    adc_samples[sample_index] = adc_value; // Store new sample in array
+ 
+    adc_sum += adc_value;                  // Add new sample to sum
+
     // Move to next index, wrap around if necessary
-    sample_index = (sample_index + 1) % window_size;
+    sample_index = (sample_index + 1) % window_size; 
+
     // Ensure we have enough samples before averaging
     if (samples_collected < window_size) {
         samples_collected++;
@@ -250,16 +268,17 @@ __interrupt void ADC_ISR(void)
         Send_ADC(temperature_C);
     
     }
-// Plant into moving average logic
-// ADC into moving average logic
-   // Subtract the oldest sample from sum
-    plant_sum -= plant_samples[plant_index];
-    // Store new sample in array
-    plant_samples[plant_index] = plant_value;
-    // Add new sample to sum
-    plant_sum += plant_value;
+//-- Plant into moving average logic (Equvalent to ADC logic above)
+
+
+    plant_sum -= plant_samples[plant_index]; // Subtract the oldest sample from sum
+  
+    plant_samples[plant_index] = plant_value;// Store new sample in array
+
+    plant_sum += plant_value;             // Add new sample to sum
     // Move to next index, wrap around if necessary
     plant_index = (plant_index + 1) % window_size;
+
     // Ensure we have enough samples before averaging
     if (plant_samples_collected < window_size) {
         plant_samples_collected++;

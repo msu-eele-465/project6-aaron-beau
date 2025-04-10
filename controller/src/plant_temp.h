@@ -8,5 +8,4 @@
 // Function prototype
 
 void plant_temp_init();
-int read_plant_temp();
 #endif
