@@ -185,10 +185,10 @@ The LCD_clear_first_line function will simply set the cursor to the first
 character, print 16 blank spaces, then return back to the first character 
 of the top line
 */
-void LCD_clear_first_line(){
+void LCD_clear_first_line(int spaces){
     int j;                          //loop variable
      LCD_command(0x80);             //set cursor to first character
-     for(j = 0; j < 16; j++){
+     for(j = 0; j < spaces; j++){
         LCD_write(0b00010000);      // blank character
      }
      LCD_command(0x80);             // reset cursor to first character
