@@ -19,25 +19,28 @@ int main(void)
 
     while(1)
     {
-        if(plant_mode == 0xA){
-            LCD_clear_first_line(5);
-            LCD_print("heat", 4);
-            plant_mode = 0;
-        }
-        else if(plant_mode == 0xB){
-            LCD_clear_first_line(5);
-            LCD_print("cool", 4);
-            plant_mode = 0;
-        }else if(plant_mode == 0xC){
-            LCD_clear_first_line(5);
-            LCD_print("match", 5);
-            plant_mode = 0;
-        }else if(plant_mode == 0xD){
-            LCD_clear_first_line(5);
-            LCD_print("off", 3);
-            plant_mode = 0;
-        }
+        switch (plant_mode) {
+    case 0xA:
+        LCD_clear_first_line(5);
+        LCD_print("heat", 4);
+        break;
+    case 0xB:
+        LCD_clear_first_line(5);
+        LCD_print("cool", 4);
+        break;
+    case 0xC:
+        LCD_clear_first_line(5);
+        LCD_print("match", 5);
+        break;
+    case 0xD:
+        LCD_clear_first_line(5);
+        LCD_print("off", 3);
+        break;
+    default:
+        break;
+}
 
+plant_mode = 0;
       
         P1OUT ^= BIT1;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
