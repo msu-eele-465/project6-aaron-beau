@@ -112,7 +112,6 @@ int main(void)
                 case 0xB:                    // Cooling
                     stepnum = lightbar(stepnum, pattspec, lightbar_byte);
                     temp = pattspec;
-                    break;
                 case 0xD:                    // Turn off all LEDs
                     P1OUT &= ~(BIT0 | BIT7 | BIT6 | BIT5 | BIT4); 
                     P2OUT &= ~(BIT7 | BIT6 | BIT0);                
