@@ -108,14 +108,14 @@ int main(void)
                     P1OUT &= ~(BIT0 | BIT7 | BIT6 | BIT5 | BIT4); 
                     P2OUT &= ~(BIT7 | BIT6 | BIT0);                
                     break;
-                case 0x1:                    // Heating
+                case 0xA:                    // Heating
                     stepnum = lightbar(stepnum, pattspec, lightbar_byte);
                     temp = pattspec;
                     if(stepnum==0){
                         pattspec=0;
                     }
                     break;
-                case 0x2:                    // Cooling
+                case 0xB:                    // Cooling
                     stepnum = lightbar(stepnum, pattspec, lightbar_byte);
                     temp = pattspec;
                     if(stepnum==0){

@@ -179,10 +179,9 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          }
                          break;
 
-                case 0xA: Packet[0]=0xA; SetOnce=1; UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT;
-                          rgb_control(2); __delay_cycles(500000);
-                          window_size_unset = 1;
-                          break;
+                case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
+                        for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                        rgb_control(2); __delay_cycles(500000); break;
 
                 case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
