@@ -27,11 +27,9 @@
 
 //---------------------- Variables ---------------------------------------------
 int locked = 1;                                 // Locked Boolean
-int relock = 0;                                 // Toggle to relock
 volatile uint8_t *txData;                       // Pointer to data buffer
 int SetOnce=1;                                  // Variable to trigger Tx once
 int window_size = 3;
-int window_size_unset;
 //---------------------- i2c Variables -----------------------------------------
 volatile char Packet[] = {0x00};                         // Tx Packet
 int Data_Cnt = 0;                               // Used for multiple bytes sent
@@ -53,6 +51,7 @@ volatile uint8_t plant_index = 0;               // Index for circular buffer
 volatile float plant_temperature_C = 0.0;       // Stores calculated temperature
 volatile uint8_t plant_samples_collected = 0;   // Tracks how many samples 
                                                 // have been collected
+int plant_mode;
 //------------------------------------------------------------------------------
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;                   // Stop watchdog timer
@@ -68,33 +67,17 @@ __bis_SR_register(GIE);  // Enable global interrupts
 //------------------------ End Initialization ----------------------------------
 
 /* 
-* Main loop continually scans keypad and jumps to different while(locked) loops 
+* Main loop continually scans keypad and jumps to different I2C send messages 
 * Depending on the button pressed
 */
     while (1) {
 
-
-
-//--Locked                                 // While Locked variable is set  
-        while (locked == 1) {              // Set led bar off and scan keypad
-            if(SetOnce==1){
-                Packet[0]=0x00;
-                SetOnce=0;
-                UCB1CTLW0 |= UCTXSTT;
-            }
-
-            rgb_control(1);
-            locked = unlock_keypad();
-        }
-
-//--Unlocked                               // When locked variable is not set
-        while (locked == 0) {              // continually scan keypad and tx
             rgb_control(3);                // Based on button press
-            relock = led_pattern();
+            plant_mode = led_pattern();
 
 /* Set packet for tx, transmit, briefly change LED to green */
 
-            switch(relock){
+            switch(plant_mode){
 
                 case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
@@ -115,7 +98,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                 default: 
                     break;
             }
-        }
+        
 
     }
 

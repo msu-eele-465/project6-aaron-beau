@@ -104,10 +104,7 @@ int main(void)
         if (barflag) {
             barflag = 0;           // Reset flag to avoid immediate retrigger
             switch (pattspec) {
-                case 0x0:                    // Turn off all LEDs
-                    P1OUT &= ~(BIT0 | BIT7 | BIT6 | BIT5 | BIT4); 
-                    P2OUT &= ~(BIT7 | BIT6 | BIT0);                
-                    break;
+                
                 case 0xA:                    // Heating
                     stepnum = lightbar(stepnum, pattspec, lightbar_byte);
                     temp = pattspec;
@@ -121,6 +118,9 @@ int main(void)
                     if(stepnum==0){
                         pattspec=0;
                     }
+                case 0xD:                    // Turn off all LEDs
+                    P1OUT &= ~(BIT0 | BIT7 | BIT6 | BIT5 | BIT4); 
+                    P2OUT &= ~(BIT7 | BIT6 | BIT0);                
                     break;
 
                 default:    
