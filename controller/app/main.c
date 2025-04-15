@@ -82,24 +82,35 @@ __bis_SR_register(GIE);  // Enable global interrupts
                 case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
                         rgb_control(2); __delay_cycles(500000); 
-                        P4OUT &= ~BIT3;
+                        P4OUT &= ~BIT3;         //set to heat
                         P4OUT |= BIT2;
                         break;
 
                 case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
-                        rgb_control(2); __delay_cycles(500000); break;
+                        rgb_control(2); __delay_cycles(500000); 
+                         P4OUT &= ~BIT2;       //set to cool     
+                         P4OUT |= BIT3;
+                        break;
 
                 case 0xC:  Packet[0]=0xC; SetOnce=1;
                           UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
                          rgb_control(2); __delay_cycles(500000); 
-                         P4OUT &= ~BIT2;
-                         P4OUT |= BIT3;
+                         while(plant_temperature_C < temperature_C){
+                            P4OUT &= ~BIT3;         //set to heat
+                            P4OUT |= BIT2;
+                         }
+                         while(plant_temperature_C > temperature_C){
+                            P4OUT &= ~BIT2;       //set to cool     
+                            P4OUT |= BIT3;
+                         }
                          break;
 
                 case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; locked=1; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
                          for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
-                         rgb_control(2); __delay_cycles(500000); break;
+                         rgb_control(2); __delay_cycles(500000); 
+                         P4OUT &= ~(BIT3 | BIT2);           //heating and cooling off
+                         break;
 
                 default: 
                     break;
@@ -192,7 +203,7 @@ __interrupt void ADC_ISR(void)
     if (plant_samples_collected == window_size) {
         
         plant_temperature_C = (plant_sum/window_size);
-        Send_ADC(plant_temperature_C);
+        Send_plant_temp(plant_temperature_C);
     
     }
 

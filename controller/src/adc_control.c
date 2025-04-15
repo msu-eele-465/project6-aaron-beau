@@ -41,4 +41,9 @@ void Send_ADC(int value) {
 
 }
 
+void send_plant_temp(int value){
+     UCB1I2CSA = 0x00E; Packet[0] = value; UCB1CTLW0 |= UCTXSTT;
+
+}
+
 
