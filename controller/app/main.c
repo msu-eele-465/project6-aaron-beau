@@ -22,6 +22,7 @@
 #include "src/rgb_control.h"
 #include "src/controller_control.h"
 #include "src/adc_control.h"
+#include "src/lcd_control.h"
 
 #define MAX_WINDOW_SIZE 9           //max size that window can be
 
