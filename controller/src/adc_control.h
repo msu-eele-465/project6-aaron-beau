@@ -7,6 +7,7 @@
 
 // Function prototype
 
-void Convert_and_Send_Float(float value);
 void ADC_init();
+void send_plant_temp(int value);
+void Send_ADC(int value);
 #endif
