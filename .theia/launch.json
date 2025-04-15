@@ -34,6 +34,15 @@
                 "name": "LCD",
                 "resourceId": "/LCD/app/main.c"
             }
+        },
+        {
+            "name": "LED_BAR",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "LED_BAR",
+                "resourceId": "/LED_BAR"
+            }
         }
     ]
 }
