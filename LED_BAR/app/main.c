@@ -1,84 +1,198 @@
-/* --COPYRIGHT--,BSD_EX
- * Copyright (c) 2014, Texas Instruments Incorporated
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *******************************************************************************
- *
- *                       MSP430 CODE EXAMPLE DISCLAIMER
- *
- * MSP430 code examples are self-contained low-level programs that typically
- * demonstrate a single peripheral function or device feature in a highly
- * concise manner. For this the code may rely on the device's power-on default
- * register values and settings such as the clock configuration and care must
- * be taken when combining code from several examples to avoid potential side
- * effects. Also see www.ti.com/grace for a GUI- and www.ti.com/msp430ware
- * for an API functional library-approach to peripheral configuration.
- *
- * --/COPYRIGHT--*/
-//******************************************************************************
-//  MSP430FR231x Demo - Toggle P1.0 using software
-//
-//  Description: Toggle P1.0 every 0.1s using software.
-//  By default, FR231x select XT1 as FLL reference.
-//  If XT1 is present, the PxSEL(XIN & XOUT) needs to configure.
-//  If XT1 is absent, switch to select REFO as FLL reference automatically.
-//  XT1 is considered to be absent in this example.
-//  ACLK = default REFO ~32768Hz, MCLK = SMCLK = default DCODIV ~1MHz.
-//
-//           MSP430FR231x
-//         ---------------
-//     /|\|               |
-//      | |               |
-//      --|RST            |
-//        |           P1.0|-->LED
-//
-//   Darren Lu
-//   Texas Instruments Inc.
-//   July 2015
-//   Built with IAR Embedded Workbench v6.30 & Code Composer Studio v6.1 
-//******************************************************************************
+/*-----------------------------------------------------------------------------
+* Project 6: Multi MSP with LED bar and LCD Display and Temp sensor
+* Aaron Foster & Beau Coburn
+* EELE 465
+* 3/25/25
+* 
+* Main file for the Led-bar peripheral msp. receives commands from master via
+* I2C and changes LED pattern accordingly.
+*///----------------------------------------------------------------------------
 #include <msp430.h>
+#include "intrinsics.h"
+#include "src/lightbar.h"
+#include "msp430fr2310.h"
+#include <stdint.h>
+
+#define SLAVE_ADDR 0x69                     // Define I2C slave address
+
+//-------------------Variable Initialization -----------------------------------
+/* Many variables are for counting and control logic, see descriptions below */
+//-----------------------------------------------------------------------------
+static int stepnum = 0;                     // Current step in lightbar pattern
+static int barflag = 0;                     // Flag to update lightbar state
+static int pattspec = 0;                    // Specifies the lightbar pattern
+
+int pattnum1 = 0;                           // Pattern counter 1
+int pattnum3 = 0;                           // Pattern counter 3
+
+int temp = 0;                               // Temporary storage for pattern
+volatile static uint8_t lightbar_byte = 0;  // Stores lightbar data (volatile for ISR)
+static int time_cntl = 0;                   // Controls pattern timing
+static int base_time=3;                       // Base time for pattern timing
+int barcounter = 0;                         // Counter for bar updates
+static int status = 10;                     // Status indicator
+volatile int wait;
+
+//---------------------- I2C Variables ----------------------
+volatile uint8_t Received = 0;                  // Single-byte storage for I2C reception
+//-----------------------------------------------------------
+#include <msp430fr2310.h>
+#include <stdbool.h>
 
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;               // Stop watchdog timer
+    // Stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;
 
-    P1OUT &= ~BIT0;                         // Clear P1.0 output latch for a defined power-on state
-    P1DIR |= BIT0;                          // Set P1.0 to output direction
+//------------------------------------------------------------------------------
+//---------------------------- Pin Initialization ------------------------------
+//------------------------------------------------------------------------------
 
-    PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
-                                            // to activate previously configured port settings
+//------Setup Timer B0 (0.25s interval for heartbeat and patterns)
+    TB0CTL |= TBCLR;                        // Clear timer
+    TB0CTL |= TBSSEL__SMCLK;                // Select SMCLK (1 MHz)
+    TB0CTL |= MC__UP;                       // Set mode to "up"
+    TB0CTL |= ID__4;                        // Divide clock by 4
+    TB0CCR0 = 65500;                        // Set overflow period to ~0.25s
+    TB0CTL |= TBIE;                         // Enable Timer Overflow Interrupt
+    TB0CTL &= ~TBIFG;                       // Clear pending interrupt flag
+    __enable_interrupt();                   // Enable global interrupts
 
-    while(1)
-    {
-        P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
-        __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
+//------------------------------- I2C Initialization -----------------------------    
+//--Put eUSCI_B0 into software reset to allow configuration
+    UCB0CTLW0 |= UCSWRST;       
+
+//--Configure eUSCI_B0 for I2C Slave mode
+    UCB0CTLW0 |= UCMODE_3 | UCSYNC;         // Set I2C mode, synchronous operation
+    UCB0I2COA0 = SLAVE_ADDR | UCOAEN;       // Set slave address & enable
+
+//--Configure Ports for I2C SDA (P1.2) and SCL (P1.3)
+    P1SEL1 &= ~(BIT3 | BIT2);               // Select primary module function for I2C
+    P1SEL0 |= (BIT3 | BIT2);
+
+//--Enable I2C Module
+    UCB0CTLW0 &= ~UCSWRST;                  // Release eUSCI_B0 from reset
+
+//--Enable I2C Interrupts
+    UCB0IE |= UCRXIE0;                      // Enable I2C receive interrupt
+    __bis_SR_register(GIE);                 // Enable global interrupts
+
+//----- 10-Segment Display Initialization and Status LED (P1.1) ------------
+    P1DIR |= (BIT0 | BIT1 | BIT7 | BIT6 | BIT5 | BIT4); 
+    P1OUT &= ~(BIT0 | BIT1 | BIT7 | BIT6 | BIT5 | BIT4);
+
+    P2DIR |= (BIT7 | BIT6 | BIT0);
+    P2OUT &= ~(BIT7 | BIT6 | BIT0);
+
+//------------------------------------------------------------------------------
+//------------------------ End Pin Initialization ------------------------------
+//------------------------------------------------------------------------------
+
+    PM5CTL0 &= ~LOCKLPM5;                  // Disable GPIO high-impedance mode
+    pattspec=2;                            // Testing
+    while (1){
+//--Timer LED Logic
+        if (status != 0) {                 // If timer countdown is active
+            P1OUT |= BIT1;                 // Turn on status LED
+        } else {
+            P1OUT &= ~BIT1;                // Turn off status LED
+        }
+
+
+//--Lightbar Pattern Update Logic
+
+        if (barflag) {
+            barflag = 0;           // Reset flag to avoid immediate retrigger
+            switch (pattspec) {
+                
+                case 0xA:                    // Heating
+                    stepnum = lightbar(stepnum, pattspec, lightbar_byte);
+                    temp = pattspec;
+                    break;
+                case 0xB:                    // Cooling
+                    stepnum = lightbar(stepnum, pattspec, lightbar_byte);
+                    temp = pattspec;
+                case 0xD:                    // Turn off all LEDs
+                    P1OUT &= ~(BIT0 | BIT7 | BIT6 | BIT5 | BIT4); 
+                    P2OUT &= ~(BIT7 | BIT6 | BIT0);                
+                    break;
+
+                default:    
+                    break;
+                }
+            }
+           
     }
 }
+
+//------------------------------------------------------------------------------
+//---------------------- Interrupt Service Routines (ISRs) ---------------------
+//------------------------------------------------------------------------------
+
+//--------------- Timer B0 Overflow ISR (Handles Lightbar Timing) --------------
+/* ISR counts every 0.25s for led bar and can be adjusted for time modulation 
+ * inputs from keypad
+ */
+#pragma vector = TIMER0_B1_VECTOR
+__interrupt void ISR_TB0_OVERFLOW(void)
+{
+    if (status != 0) {
+        status--;                         // Decrease countdown timer
+    }
+    barcounter++;                         // Increment lightbar timing counter
+    if (barcounter >= (base_time + time_cntl)) {
+        barcounter = 0;                   // Reset counter
+        barflag = 1;                      // Trigger lightbar update 
+        if (pattspec == 3) {  
+            if (++lightbar_byte > 255) lightbar_byte = 0;
+        } else if (stepnum > 7 && pattspec != 2) {
+            barflag = 0;
+            stepnum = 0;
+        }
+    }
+    TB0CTL &= ~TBIFG;                     // Clear interrupt flag
+}
+
+//--------- I2C Receive ISR (Handles Incoming Data) ---------------------------
+/* ISR triggers upon start condition from I2C bus and receives sent data from
+ * master 
+ */
+#pragma vector = EUSCI_B0_VECTOR
+__interrupt void EUSCI_B0_ISR(void)
+{
+    switch (__even_in_range(UCB0IV, 0x1E)) {
+        case 0x16:                        // UCRXIFG0: Byte received
+            status = 10;
+            Received = UCB0RXBUF;         // Read received byte
+                                          // Force an ACK manually and
+            UCB0CTLW0 &= ~UCTXACK;        // Ensure ACK is sent
+            if(Received == 0xB){
+                wait = 1;
+            }
+            pattspec=Received;
+            
+        case 0x12:                        // UCSTPIFG: Stop condition detected
+            UCB0IFG &= ~UCSTPIFG;         // Clear STOP flag
+            break;
+
+        default:
+            break;
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    // Disable low-power mode / GPIO high-impedance
+    PM5CTL0 &= ~LOCKLPM5;
+
+    while (true)
+    {
+        P1OUT ^= BIT0;
+
+        // Delay for 100000*(1/MCLK)=0.1s
+        __delay_cycles(100000);
+
+    }
+}
+
+}
+
+
