@@ -15,8 +15,6 @@ void LCD_init(){
     P4OUT &= ~(RS | EN);
     P4DIR |= (RS | EN);
 
-    
-
 
 }
 
@@ -29,64 +27,64 @@ with the screen on, cursor off, not blinking, cleared, and with the cursor in th
 left corner of the screen ready to display a message.
 */
 void LCD_setup(){
-    P2OUT &= ~RS;  // RS in command mode
+    P4OUT &= ~RS;  // RS in command mode
 __delay_cycles(50000);  // Power-up delay
 
 // Force 8-bit mode (three times)
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00110000;  
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00110000;  
 toggle_enable();
 __delay_cycles(5000);
 
 //Set 8 bit a second time
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00110000;  
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00110000;  
 toggle_enable();
 __delay_cycles(5000);
 
 //Set 8 bit a third time
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00110000;  
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00110000;  
 toggle_enable();
 __delay_cycles(5000);
 
 // Switch to 4-bit mode
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00100000;  
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00100000;  
 toggle_enable();
 __delay_cycles(000);
 
 
 //Set display on with cursor blinking
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00000000;
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00000000;
 toggle_enable();
 __delay_cycles(5000);
 
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b11000000;
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b11000000;
 toggle_enable();
 __delay_cycles(30000);
 
 //clear display
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00000000;
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00000000;
 toggle_enable();
 __delay_cycles(5000);
 
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00010000;
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00010000;
 toggle_enable();
 __delay_cycles(30000);
 
 //Set increment with shift off
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b00000000;
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b00000000;
 toggle_enable();
 __delay_cycles(5000);
 
-P1OUT &= ~(D7 | D6 | D5 | D4);
-P1OUT |= 0b01100000;
+P2OUT &= ~(D7 | D6 | D5 | D4);
+P2OUT |= 0b01100000;
 toggle_enable();
 __delay_cycles(30000);
 
@@ -99,9 +97,9 @@ high, a brief delay, and then setting the port back to low.  This occurs anytime
 a nibble of information is sent to the LCD
 */
 void toggle_enable(){
-   P2OUT |= EN;                // Set EN high
+   P4OUT |= EN;                // Set EN high
     __delay_cycles(500);         //  delay
-    P2OUT &= ~EN;               // Set EN low
+    P4OUT &= ~EN;               // Set EN low
     __delay_cycles(500);         // delay
     
 }
@@ -116,14 +114,14 @@ the toggle_enable function is called to latch the data so the LCD screen knows t
 is being sent.
 */
 void LCD_command(unsigned char cmd){
-    P2OUT &= ~RS;               // RS = 0 (Command mode)
-    P1OUT &= ~(D7 | D6 | D5 |D4);
-    P1OUT |= (cmd);                // must lower nibble of Port 1 and cmd
+    P4OUT &= ~RS;               // RS = 0 (Command mode)
+    P2OUT &= ~(D7 | D6 | D5 |D4);
+    P2OUT |= (cmd);                // must lower nibble of Port 1 and cmd
     toggle_enable();                                        //Latch
     __delay_cycles(3000);  
 
-    P1OUT &= ~(D7 | D6 | D5 | D4);
-    P1OUT |= (cmd << 4);         //mask upper nibble, mask upper nibble of command and shift left
+    P2OUT &= ~(D7 | D6 | D5 | D4);
+    P2OUT |= (cmd << 4);         //mask upper nibble, mask upper nibble of command and shift left
     toggle_enable();                                        //Latch
     __delay_cycles(3000);                                   //Delay for execution
     
@@ -148,15 +146,15 @@ lower nibble, and latch again.  The LCD will process this value and
 display the corresponding character
 */
 void LCD_write(unsigned char message) {
-    P2OUT |= RS;               // RS = 1 (Write mode)
+    P4OUT |= RS;               // RS = 1 (Write mode)
 
-    P1OUT &= ~(D7 | D6 | D5 | D4);
-    P1OUT |= (message);                //  upper nibble of message
+    P2OUT &= ~(D7 | D6 | D5 | D4);
+    P2OUT |= (message);                //  upper nibble of message
     toggle_enable();                                        //Latch
     __delay_cycles(3000);  
 
-    P1OUT &= ~(D7 | D6 | D5 | D4);
-    P1OUT |= (message << 4);         // shift message left 4 to send lower nibble
+    P2OUT &= ~(D7 | D6 | D5 | D4);
+    P2OUT |= (message << 4);         // shift message left 4 to send lower nibble
     toggle_enable();                                        //Latch
     __delay_cycles(3000);                                   //Delay for execution
 }

@@ -3,8 +3,8 @@
 
 #include <msp430.h>
 
-#define RS  BIT6
-#define EN  BIT7
+#define RS  BIT5
+#define EN  BIT4
 #define D7  BIT7
 #define D6  BIT6
 #define D5  BIT5

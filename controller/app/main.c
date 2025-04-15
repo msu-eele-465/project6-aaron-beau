@@ -61,6 +61,8 @@ UCB1CTLW0 &= ~UCSWRST;
 controller_init();
 ADC_init();
 plant_temp_init();
+LCD_init();
+LCD_setup();
 
 __bis_SR_register(GIE);  // Enable global interrupts
 
