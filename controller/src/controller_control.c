@@ -26,6 +26,10 @@ void controller_init(){
     P6DIR |= BIT6;                             // Set P16 to output direction
     P6OUT |= BIT6;      // Clear P16 output latch for a defined power-on state
 
+//--Thermo Plant Pins (P4.2 = Heat and P4.3 = Cool)
+    P4OUT &= ~(BIT2 | BIT3);
+    P4DIR |= (BIT2 | BIT3);
+
 
    
 //----------------------------Timer_B Initialization----------------------------
