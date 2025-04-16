@@ -197,18 +197,19 @@ __interrupt void ADC_ISR(void)
     if (samples_collected == window_size) {
         float conversion_factor = 20.05 / 2047;
         temperature_C = (adc_sum/window_size) * conversion_factor;
-
+        //break components of float into individual integers
         int whole = (int)temperature_C;
         tens = whole / 10;
         ones = whole % 10;
         decimal = (int)((temperature_C - whole) * 10);
+        //Change these values to ascii chacters to be printed
         char temperature_string[4];
         temperature_string[0] = tens + '0';
         temperature_string[1] = ones + '0';
         temperature_string[2] = '.';
         temperature_string[3] = decimal + '0';
-        LCD_command(0x8A);
-        LCD_print(temperature_string, 4);     // Print "26.1"
+        LCD_command(0x8A);                      //move cursor to 11th space on first row
+        LCD_print(temperature_string, 4);    
        
     
     }
@@ -231,19 +232,19 @@ __interrupt void ADC_ISR(void)
     if (plant_samples_collected == window_size) {
         
         plant_temperature_C = (plant_sum/window_size);
-
+        //break temperature into individual integer components
         int whole = (int)plant_temperature_C;
         tens = whole / 10;
         ones = whole % 10;
         decimal = (int)((plant_temperature_C - whole) * 10);
-
+        //change these integers to ascii value to be printed
         char temperature_string[4];
         temperature_string[0] = tens + '0';
         temperature_string[1] = ones + '0';
         temperature_string[2] = '.';
         temperature_string[3] = decimal + '0';
-        LCD_command(0xCA);
-        LCD_print(temperature_string, 4);     // Print "26.1"
+        LCD_command(0xCA);                      //move cursor to 11th space on the second row
+        LCD_print(temperature_string, 4);    
        
        
     
