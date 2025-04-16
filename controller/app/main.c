@@ -22,11 +22,11 @@
 #include "src/rgb_control.h"
 #include "src/controller_control.h"
 #include "src/adc_control.h"
+#include "src/lcd_control.h"
 
 #define MAX_WINDOW_SIZE 9           //max size that window can be
 
 //---------------------- Variables ---------------------------------------------
-int locked = 1;                                 // Locked Boolean
 volatile uint8_t *txData;                       // Pointer to data buffer
 int SetOnce=1;                                  // Variable to trigger Tx once
 int window_size = 3;
@@ -52,6 +52,11 @@ volatile float plant_temperature_C = 0.0;       // Stores calculated temperature
 volatile uint8_t plant_samples_collected = 0;   // Tracks how many samples 
                                                 // have been collected
 int plant_mode;
+int tens;
+int ones;
+int decimal;
+
+const char zero_to_ten[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 //------------------------------------------------------------------------------
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;                   // Stop watchdog timer
@@ -60,6 +65,14 @@ UCB1CTLW0 &= ~UCSWRST;
 controller_init();
 ADC_init();
 plant_temp_init();
+LCD_init();
+LCD_setup();
+LCD_command(0xC0);
+LCD_print("3", 1);
+LCD_command(0x88); // move to row 1, position 9
+LCD_print("A:", 2);
+LCD_command(0xC8); // move to row 2, position 9
+LCD_print("P:", 2);
 
 __bis_SR_register(GIE);  // Enable global interrupts
 
@@ -71,7 +84,6 @@ __bis_SR_register(GIE);  // Enable global interrupts
 * Depending on the button pressed
 */
     while (1) {
-
             rgb_control(3);                // Based on button press
             plant_mode = led_pattern();
 
@@ -80,22 +92,27 @@ __bis_SR_register(GIE);  // Enable global interrupts
             switch(plant_mode){
 
                 case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
-                        for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                        for(i=0; i<100; i++){} 
                         rgb_control(2); __delay_cycles(500000); 
+                        LCD_clear_first_line(5);
+                        LCD_print("Heat", 4);
                         P4OUT &= ~BIT3;         //set to heat
                         P4OUT |= BIT2;
                         break;
 
                 case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
-                        for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                        for(i=0; i<100; i++){} 
                         rgb_control(2); __delay_cycles(500000); 
+                        LCD_clear_first_line(5);
+                        LCD_print("Cool", 4);
                          P4OUT &= ~BIT2;       //set to cool     
                          P4OUT |= BIT3;
                         break;
 
-                case 0xC:  Packet[0]=0xC; SetOnce=1;
-                          UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
-                         rgb_control(2); __delay_cycles(500000); 
+                case 0xC:  
+                         rgb_control(2); __delay_cycles(500000);
+                         LCD_clear_first_line(5); 
+                         LCD_print("Match", 5);
                          while(plant_temperature_C < temperature_C){
                             P4OUT &= ~BIT3;         //set to heat
                             P4OUT |= BIT2;
@@ -106,8 +123,8 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          }
                          break;
 
-                case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; locked=1; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
-                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
+                         for(i=0; i<100; i++){}  
                          rgb_control(2); __delay_cycles(500000); 
                          P4OUT &= ~(BIT3 | BIT2);           //heating and cooling off
                          break;
@@ -116,7 +133,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                     break;
             }
         
-
+            
     }
 
     return 0;
@@ -138,8 +155,7 @@ __interrupt void USCI_B1_ISR(void) {
 //-- Timer_B ISR Triggers temperature reading every 0.5s----------------------
 #pragma vector = TIMER0_B0_VECTOR
 __interrupt void Timer_B_ISR(void) {
-   if(locked == 0){
-
+   
 
 //-- Plant temp conversation
     UCB1I2CSA = 0x48;                              // address 
@@ -149,7 +165,7 @@ __interrupt void Timer_B_ISR(void) {
     UCB1CTLW0 |= UCTXSTP;                          // Send STOP condition
 //-- ADC conversation (call ISR)
     ADCCTL0 |= ADCENC | ADCSC;
-   }
+   
     TB0CCTL0 &= ~CCIFG;                            // Clear interrupt flag
 }
 
@@ -181,7 +197,22 @@ __interrupt void ADC_ISR(void)
     if (samples_collected == window_size) {
         float conversion_factor = 20.05 / 2047;
         temperature_C = (adc_sum/window_size) * conversion_factor;
-        Send_ADC(temperature_C);
+        //break components of float into individual integers
+        int whole = (int)temperature_C;
+        tens = whole / 10;
+        ones = whole % 10;
+        decimal = (int)((temperature_C - whole) * 10);
+        //Change these values to ascii chacters to be printed
+        char temperature_string[6];
+        temperature_string[0] = tens + '0';
+        temperature_string[1] = ones + '0';
+        temperature_string[2] = '.';
+        temperature_string[3] = decimal + '0';
+        temperature_string[4] = 223;       //ASCII code for degree symbol (in decimal)
+        temperature_string[5] = 'C';
+        LCD_command(0x8A);                      //move cursor to 11th space on first row
+        LCD_print(temperature_string, 6);    
+       
     
     }
 //-- Plant into moving average logic (Equvalent to ADC logic above)
@@ -203,9 +234,23 @@ __interrupt void ADC_ISR(void)
     if (plant_samples_collected == window_size) {
         
         plant_temperature_C = (plant_sum/window_size);
-        Send_plant_temp(plant_temperature_C);
+        //break temperature into individual integer components
+        int whole = (int)plant_temperature_C;
+        tens = whole / 10;
+        ones = whole % 10;
+        decimal = (int)((plant_temperature_C - whole) * 10);
+        //change these integers to ascii value to be printed
+        char temperature_string[6];
+        temperature_string[0] = tens + '0';
+        temperature_string[1] = ones + '0';
+        temperature_string[2] = '.';
+        temperature_string[3] = decimal + '0';
+        temperature_string[4] = 223;       //ASCII for degree symbol (in decimal)
+        temperature_string[5] = 'C';
+        LCD_command(0xCA);                      //move cursor to 11th space on the second row
+        LCD_print(temperature_string, 6);    
+       
+       
     
     }
-
-
 }

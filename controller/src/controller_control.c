@@ -33,8 +33,8 @@ void controller_init(){
 
    
 //----------------------------Timer_B Initialization----------------------------
-    TB0CCTL0 = CCIE;         // Enable Timer_B interrupt
-    TB0CCR0 = 62500;         // 125kHz / 2 = 0.5s interval
+    TB0CCTL0 |= CCIE;         // Enable Timer_B interrupt
+    TB0CCR0 |= 62500;         // 125kHz / 2 = 0.5s interval
     TB0CTL |= TBSSEL_2;      // Select SMCLK (1 MHz) 
     TB0CTL |= MC_1;          // Set Timer_B to Up Mode 
     TB0CTL |= ID_3;          // Set input divider to 8 
