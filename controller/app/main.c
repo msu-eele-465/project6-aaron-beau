@@ -203,13 +203,15 @@ __interrupt void ADC_ISR(void)
         ones = whole % 10;
         decimal = (int)((temperature_C - whole) * 10);
         //Change these values to ascii chacters to be printed
-        char temperature_string[4];
+        char temperature_string[6];
         temperature_string[0] = tens + '0';
         temperature_string[1] = ones + '0';
         temperature_string[2] = '.';
         temperature_string[3] = decimal + '0';
+        temperature_string[4] = 223;       //ASCII code for degree symbol (in decimal)
+        temperature_string[5] = 'C';
         LCD_command(0x8A);                      //move cursor to 11th space on first row
-        LCD_print(temperature_string, 4);    
+        LCD_print(temperature_string, 6);    
        
     
     }
@@ -238,13 +240,15 @@ __interrupt void ADC_ISR(void)
         ones = whole % 10;
         decimal = (int)((plant_temperature_C - whole) * 10);
         //change these integers to ascii value to be printed
-        char temperature_string[4];
+        char temperature_string[6];
         temperature_string[0] = tens + '0';
         temperature_string[1] = ones + '0';
         temperature_string[2] = '.';
         temperature_string[3] = decimal + '0';
+        temperature_string[4] = 223;       //ASCII for degree symbol (in decimal)
+        temperature_string[5] = 'C';
         LCD_command(0xCA);                      //move cursor to 11th space on the second row
-        LCD_print(temperature_string, 4);    
+        LCD_print(temperature_string, 6);    
        
        
     
