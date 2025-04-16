@@ -53,6 +53,9 @@ volatile float plant_temperature_C = 0.0;       // Stores calculated temperature
 volatile uint8_t plant_samples_collected = 0;   // Tracks how many samples 
                                                 // have been collected
 int plant_mode;
+int tens;
+int ones;
+int decimal;
 //------------------------------------------------------------------------------
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;                   // Stop watchdog timer
@@ -63,6 +66,12 @@ ADC_init();
 plant_temp_init();
 LCD_init();
 LCD_setup();
+LCD_command(0xC0);
+LCD_print("3", 1);
+LCD_command(0x88); // move to row 1, position 9
+LCD_print("A:", 2);
+LCD_command(0xC8); // move to row 2, position 9
+LCD_print("P:", 2);
 
 __bis_SR_register(GIE);  // Enable global interrupts
 
@@ -74,7 +83,6 @@ __bis_SR_register(GIE);  // Enable global interrupts
 * Depending on the button pressed
 */
     while (1) {
-
             rgb_control(3);                // Based on button press
             plant_mode = led_pattern();
 
@@ -83,22 +91,27 @@ __bis_SR_register(GIE);  // Enable global interrupts
             switch(plant_mode){
 
                 case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
-                        for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                        for(i=0; i<100; i++){} 
                         rgb_control(2); __delay_cycles(500000); 
+                        LCD_clear_first_line(5);
+                        LCD_print("Heat", 4);
                         P4OUT &= ~BIT3;         //set to heat
                         P4OUT |= BIT2;
                         break;
 
                 case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
-                        for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                        for(i=0; i<100; i++){} 
                         rgb_control(2); __delay_cycles(500000); 
+                        LCD_clear_first_line(5);
+                        LCD_print("Cool", 4);
                          P4OUT &= ~BIT2;       //set to cool     
                          P4OUT |= BIT3;
                         break;
 
-                case 0xC:  Packet[0]=0xC; SetOnce=1;
-                          UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
-                         rgb_control(2); __delay_cycles(500000); 
+                case 0xC:  
+                         rgb_control(2); __delay_cycles(500000);
+                         LCD_clear_first_line(5); 
+                         LCD_print("Match", 5);
                          while(plant_temperature_C < temperature_C){
                             P4OUT &= ~BIT3;         //set to heat
                             P4OUT |= BIT2;
@@ -110,7 +123,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          break;
 
                 case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; locked=1; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
-                         for(i=0; i<100; i++){} UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                         for(i=0; i<100; i++){}  
                          rgb_control(2); __delay_cycles(500000); 
                          P4OUT &= ~(BIT3 | BIT2);           //heating and cooling off
                          break;
@@ -119,7 +132,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                     break;
             }
         
-
+            
     }
 
     return 0;
@@ -184,7 +197,11 @@ __interrupt void ADC_ISR(void)
     if (samples_collected == window_size) {
         float conversion_factor = 20.05 / 2047;
         temperature_C = (adc_sum/window_size) * conversion_factor;
-        Send_ADC(temperature_C);
+
+        tens = temperature_C / 10;
+        ones = temperature_C % 10;
+        decimal = temperature_C - int(temperature_C) * 10;
+       
     
     }
 //-- Plant into moving average logic (Equvalent to ADC logic above)
@@ -206,7 +223,7 @@ __interrupt void ADC_ISR(void)
     if (plant_samples_collected == window_size) {
         
         plant_temperature_C = (plant_sum/window_size);
-        Send_plant_temp(plant_temperature_C);
+
     
     }
 

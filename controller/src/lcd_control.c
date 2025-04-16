@@ -27,7 +27,7 @@ with the screen on, cursor off, not blinking, cleared, and with the cursor in th
 left corner of the screen ready to display a message.
 */
 void LCD_setup(){
-    P4OUT &= ~RS;  // RS in command mode
+P4OUT &= ~RS;  // RS in command mode
 __delay_cycles(50000);  // Power-up delay
 
 // Force 8-bit mode (three times)
@@ -162,7 +162,7 @@ void LCD_write(unsigned char message) {
 
 /*
 The LCD_clear_first_line function will simply set the cursor to the first 
-character, print 16 blank spaces, then return back to the first character 
+character, print a selected number of blank spaces, then return back to the first character 
 of the top line
 */
 void LCD_clear_first_line(int spaces){
