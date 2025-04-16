@@ -30,6 +30,7 @@ void ADC_init(){
     ADCMCTL0 |= ADCINCH_8;      //ADC INPUT Channel = A8
    
     ADCIE |= ADCIE0;            //enable ADC IRQ
+   
     
 }
 

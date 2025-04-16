@@ -18,6 +18,15 @@
                 "name": "LED_BAR",
                 "resourceId": "/LED_BAR"
             }
+        },
+        {
+            "name": "controller (1)",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "controller",
+                "resourceId": "/controller/app"
+            }
         }
     ]
 }
