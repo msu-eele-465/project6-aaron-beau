@@ -100,6 +100,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         LCD_clear_first_line(5);
                         LCD_print("Heat", 4);
                         P4OUT &= ~BIT3;         //set to heat
+                        P4OUT &= ~BIT2;
                         P4OUT |= BIT2;
                         break;
 
@@ -113,7 +114,8 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         rgb_control(2); __delay_cycles(500000); 
                         LCD_clear_first_line(5);
                         LCD_print("Cool", 4);
-                         P4OUT &= ~BIT2;       //set to cool     
+                         P4OUT &= ~BIT2;       //set to cool  
+                         P4OUT &= ~BIT3;   
                          P4OUT |= BIT3;
                         break;
 
@@ -122,27 +124,52 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          LCD_clear_first_line(5); 
                          LCD_print("Match", 5);
 
-                         while(plant_temperature_C < temperature_C){
-                            P4OUT &= ~BIT3;         //set to heat
-                            P4OUT |= BIT2;
+                         if(plant_temperature_C < temperature_C){
                             UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1;
                             Data_Cnt = 0;          //ensure count is zero
                             UCB1TBCNT = 1;         // set packet length to 1
                             UCB1CTLW0 |= UCTR;     // Transmitter mode
                             UCB1IE |= UCTXIE0;     // Enable TX interrupt
                             UCB1CTLW0 |= UCTXSTT;  // Start transmission
+                            P4OUT &= ~(BIT2 | BIT3);
+                         
+                         while(plant_temperature_C < temperature_C){
+                            //set to heat
+                            P4OUT |= BIT2;
+                            }
+                            UCB1I2CSA = 0x0069; Packet[0]=0xD; SetOnce=1;
+                            Data_Cnt = 0;          //ensure count is zero
+                            UCB1TBCNT = 1;         // set packet length to 1
+                            UCB1CTLW0 |= UCTR;     // Transmitter mode
+                            UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                            UCB1CTLW0 |= UCTXSTT;  // Start transmission
+                            P4OUT &= ~(BIT2 | BIT3);
+                            LCD_clear_first_line(5);
+                            break;
                          }
-                         while(plant_temperature_C > temperature_C){
-                            P4OUT &= ~BIT2;       //set to cool     
-                            P4OUT |= BIT3;
+                        if(plant_temperature_C > temperature_C){
                             UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1;
                             Data_Cnt = 0;          //ensure count is zero
                             UCB1TBCNT = 1;         // set packet length to 1
                             UCB1CTLW0 |= UCTR;     // Transmitter mode
                             UCB1IE |= UCTXIE0;     // Enable TX interrupt
                             UCB1CTLW0 |= UCTXSTT;  // Start transmission
-                         }
-                         break;
+                            P4OUT &= ~(BIT2 | BIT3);
+                         
+                         while(plant_temperature_C > temperature_C){
+                            //set to cool     
+                            P4OUT |= BIT3;
+                            } 
+                            UCB1I2CSA = 0x0069; Packet[0]=0xD; SetOnce=1;
+                            Data_Cnt = 0;          //ensure count is zero
+                            UCB1TBCNT = 1;         // set packet length to 1
+                            UCB1CTLW0 |= UCTR;     // Transmitter mode
+                            UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                            UCB1CTLW0 |= UCTXSTT;  // Start transmission
+                            P4OUT &= ~(BIT2 | BIT3);
+                            LCD_clear_first_line(5);
+                            break;
+                            }
 
                 case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; SetOnce=1; 
                         Data_Cnt = 0;          //ensure count is zero
