@@ -14,7 +14,7 @@ You will fill out this form:
 | Circuit diagram                                                                        | 1      |    1      |            |
 | System architecture diagram                                                            | 1      |    1      |            |
 | High-level flowchart                                                                   | 1      |           |     1      |
-| Professional demo                                                                      | 2      |    1      |     1      |
+| Professional demo                                                                      | 2      |           |     2      |
 | Collect ambient temperature using the LM19                                             | 2      |    1      |     1      |
 | Collect data every 0.5 s (proof required)                                              | 1      |    1      |            |
 | Collect the plant’s temperature using the LM92                                         | 6      |    6      |            |
@@ -34,7 +34,7 @@ You will fill out this form:
 | Display the temperature in the top-right corner                                        | 1      |           |     1      |
 | Display the temperature with a resolution of 0.1 C                                     | 1      |           |     1      |
 | Display the plant temperature                                                          | 2      |           |     2      |
-| Refresh the temperature at least every 2 s                                             | 1      |           |     1      |
+| Refresh the temperature at least every 2 s                                             | 1      |     1     |            |
 | Display the temperature in the bottom-right corner                                     | 1      |           |     1      |
 | Display the temperature with a resolution of 0.1 C                                     | 1      |           |     1      |
 | Display the window size                                                                | 2      |           |     2      |
