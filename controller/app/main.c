@@ -101,8 +101,8 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         rgb_control(2); __delay_cycles(500000); 
                         LCD_clear_first_line(5);
                         LCD_print("Heat", 4);
-                        P6OUT &= ~BIT1;         //set to heat
-                        P6OUT |= BIT0;
+                        P4OUT &= ~BIT3;         //set to heat
+                        P4OUT |= BIT2;
                         break;
 
                 case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1;
@@ -115,8 +115,8 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         rgb_control(2); __delay_cycles(500000); 
                         LCD_clear_first_line(5);
                         LCD_print("Cool", 4);
-                         P6OUT &= ~BIT1;       //set to cool     
-                         P6OUT |= BIT0;
+                         P4OUT &= ~BIT2;       //set to cool     
+                         P4OUT |= BIT3;
                         break;
 
                 case 0xC:  
@@ -127,10 +127,22 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          while(plant_temperature_C < temperature_C){
                             P4OUT &= ~BIT3;         //set to heat
                             P4OUT |= BIT2;
+                            UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1;
+                            Data_Cnt = 0;          //ensure count is zero
+                            UCB1TBCNT = 1;         // set packet length to 1
+                            UCB1CTLW0 |= UCTR;     // Transmitter mode
+                            UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                            UCB1CTLW0 |= UCTXSTT;  // Start transmission
                          }
                          while(plant_temperature_C > temperature_C){
                             P4OUT &= ~BIT2;       //set to cool     
                             P4OUT |= BIT3;
+                            UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1;
+                            Data_Cnt = 0;          //ensure count is zero
+                            UCB1TBCNT = 1;         // set packet length to 1
+                            UCB1CTLW0 |= UCTR;     // Transmitter mode
+                            UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                            UCB1CTLW0 |= UCTXSTT;  // Start transmission
                          }
                          break;
 
