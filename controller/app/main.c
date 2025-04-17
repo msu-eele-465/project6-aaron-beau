@@ -94,7 +94,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         break;
 
                 case 0xC:  Packet[0]=0xC; SetOnce=1;
-                          UCB1I2CSA = 0x00E; UCB1CTLW0 |= UCTXSTT; 
+                          UCB1I2CSA = 0x0069; UCB1CTLW0 |= UCTXSTT; 
                          rgb_control(2); __delay_cycles(500000); 
                          while(plant_temperature_C < temperature_C){
                             P4OUT &= ~BIT3;         //set to heat
