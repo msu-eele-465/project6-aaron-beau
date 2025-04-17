@@ -55,8 +55,6 @@ int plant_mode;
 int tens;
 int ones;
 int decimal;
-
-const char zero_to_ten[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 //------------------------------------------------------------------------------
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;                   // Stop watchdog timer
@@ -152,6 +150,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         UCB1CTLW0 |= UCTR;     // Transmitter mode
                         UCB1IE |= UCTXIE0;     // Enable TX interrupt
                         UCB1CTLW0 |= UCTXSTT;  // Start transmission 
+                        LCD_clear_first_line(5);
                          for(i=0; i<100; i++){}  
                          rgb_control(2); __delay_cycles(500000); 
                          P4OUT &= ~(BIT3 | BIT2);           //heating and cooling off
