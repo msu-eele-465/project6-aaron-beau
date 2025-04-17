@@ -98,14 +98,11 @@ int main(void)
             P1OUT &= ~BIT1;                // Turn off status LED
         }
 
-
-//--Lightbar Pattern Update Logic
-
         if (barflag) {
     barflag = 0; // Clear the flag
 
     if (pattspec == 0xA) {
-        // Animate heating bar
+        // system is heating
         switch (stepnum) {
             case 0: P1OUT |= BIT4; break;
             case 1: P1OUT |= BIT5; break;
@@ -122,10 +119,8 @@ int main(void)
                 break;
         }
         stepnum++;
-    }
-
-    else if (pattspec == 0xB) {
-        // Animate cooling bar
+    }else if (pattspec == 0xB) {
+        // system is cooling
         switch (stepnum) {
             case 0: P1OUT |= BIT0; break;
             case 1: P2OUT |= BIT7; break;
@@ -142,8 +137,11 @@ int main(void)
                 break;
         }
         stepnum++;
+    }else if (pattspec == 0xD){
+        P1OUT &= ~(BIT0 | BIT4 | BIT5 | BIT6 | BIT7);
+        P2OUT &= ~(BIT0 | BIT6 | BIT7);
+        }
     }
-}
            
     }
 }
