@@ -89,7 +89,7 @@ int main(void)
 //------------------------------------------------------------------------------
 
     PM5CTL0 &= ~LOCKLPM5;                  // Disable GPIO high-impedance mode
-    pattspec=2;                            // Testing
+    //pattspec=0xA;                            // Testing
     while (1){
 //--Timer LED Logic
         if (status != 0) {                 // If timer countdown is active
@@ -98,29 +98,50 @@ int main(void)
             P1OUT &= ~BIT1;                // Turn off status LED
         }
 
-
-//--Lightbar Pattern Update Logic
-
         if (barflag) {
-            barflag = 0;           // Reset flag to avoid immediate retrigger
-            switch (pattspec) {
-                
-                case 0xA:                    // Heating
-                    stepnum = lightbar(stepnum, pattspec, lightbar_byte);
-                    temp = pattspec;
-                    break;
-                case 0xB:                    // Cooling
-                    stepnum = lightbar(stepnum, pattspec, lightbar_byte);
-                    temp = pattspec;
-                case 0xD:                    // Turn off all LEDs
-                    P1OUT &= ~(BIT0 | BIT7 | BIT6 | BIT5 | BIT4); 
-                    P2OUT &= ~(BIT7 | BIT6 | BIT0);                
-                    break;
+    barflag = 0; // Clear the flag
 
-                default:    
-                    break;
-                }
-            }
+    if (pattspec == 0xA) {
+        // system is heating
+        switch (stepnum) {
+            case 0: P1OUT |= BIT4; break;
+            case 1: P1OUT |= BIT5; break;
+            case 2: P1OUT |= BIT6; break;
+            case 3: P1OUT |= BIT7; break;
+            case 4: P2OUT |= BIT0; break;
+            case 5: P2OUT |= BIT6; break;
+            case 6: P2OUT |= BIT7; break;
+            case 7: P1OUT |= BIT0; break;
+            case 8:
+                P1OUT &= ~(BIT0 | BIT4 | BIT5 | BIT6 | BIT7);
+                P2OUT &= ~(BIT0 | BIT6 | BIT7);
+                stepnum = -1; // Reset cycle
+                break;
+        }
+        stepnum++;
+    }else if (pattspec == 0xB) {
+        // system is cooling
+        switch (stepnum) {
+            case 0: P1OUT |= BIT0; break;
+            case 1: P2OUT |= BIT7; break;
+            case 2: P2OUT |= BIT6; break;
+            case 3: P2OUT |= BIT0; break;
+            case 4: P1OUT |= BIT7; break;
+            case 5: P1OUT |= BIT6; break;
+            case 6: P1OUT |= BIT5; break;
+            case 7: P1OUT |= BIT4; break;
+            case 8:
+                P1OUT &= ~(BIT0 | BIT4 | BIT5 | BIT6 | BIT7);
+                P2OUT &= ~(BIT0 | BIT6 | BIT7);
+                stepnum = -1;
+                break;
+        }
+        stepnum++;
+    }else if (pattspec == 0xD){
+        P1OUT &= ~(BIT0 | BIT4 | BIT5 | BIT6 | BIT7);
+        P2OUT &= ~(BIT0 | BIT6 | BIT7);
+        }
+    }
            
     }
 }
@@ -145,9 +166,6 @@ __interrupt void ISR_TB0_OVERFLOW(void)
         barflag = 1;                      // Trigger lightbar update 
         if (pattspec == 3) {  
             if (++lightbar_byte > 255) lightbar_byte = 0;
-        } else if (stepnum > 7 && pattspec != 2) {
-            barflag = 0;
-            stepnum = 0;
         }
     }
     TB0CTL &= ~TBIFG;                     // Clear interrupt flag

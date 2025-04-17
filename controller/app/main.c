@@ -91,7 +91,12 @@ __bis_SR_register(GIE);  // Enable global interrupts
 
             switch(plant_mode){
 
-                case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
+                case 0xA: UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1;
+                        Data_Cnt = 0;          //ensure count is zero
+                        UCB1TBCNT = 1;         // set packet length to 1
+                        UCB1CTLW0 |= UCTR;     // Transmitter mode
+                        UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                        UCB1CTLW0 |= UCTXSTT;  // Start transmission
                         for(i=0; i<100; i++){} 
                         rgb_control(2); __delay_cycles(500000); 
                         LCD_clear_first_line(5);
@@ -100,7 +105,12 @@ __bis_SR_register(GIE);  // Enable global interrupts
                         P4OUT |= BIT2;
                         break;
 
-                case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1; UCB1CTLW0 |= UCTXSTT;
+                case 0xB: UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1;
+                        Data_Cnt = 0;          //ensure count is zero
+                        UCB1TBCNT = 1;         // set packet length to 1
+                        UCB1CTLW0 |= UCTR;     // Transmitter mode
+                        UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                        UCB1CTLW0 |= UCTXSTT;  // Start transmission
                         for(i=0; i<100; i++){} 
                         rgb_control(2); __delay_cycles(500000); 
                         LCD_clear_first_line(5);
@@ -117,14 +127,31 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          while(plant_temperature_C < temperature_C){
                             P4OUT &= ~BIT3;         //set to heat
                             P4OUT |= BIT2;
+                            UCB1I2CSA = 0x0069; Packet[0]=0xA; SetOnce=1;
+                            Data_Cnt = 0;          //ensure count is zero
+                            UCB1TBCNT = 1;         // set packet length to 1
+                            UCB1CTLW0 |= UCTR;     // Transmitter mode
+                            UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                            UCB1CTLW0 |= UCTXSTT;  // Start transmission
                          }
                          while(plant_temperature_C > temperature_C){
                             P4OUT &= ~BIT2;       //set to cool     
                             P4OUT |= BIT3;
+                            UCB1I2CSA = 0x0069; Packet[0]=0xB; SetOnce=1;
+                            Data_Cnt = 0;          //ensure count is zero
+                            UCB1TBCNT = 1;         // set packet length to 1
+                            UCB1CTLW0 |= UCTR;     // Transmitter mode
+                            UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                            UCB1CTLW0 |= UCTXSTT;  // Start transmission
                          }
                          break;
 
-                case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; SetOnce=1; UCB1CTLW0 |= UCTXSTT; 
+                case 0xD: UCB1I2CSA = 0x0069; Packet[0]=0xD; SetOnce=1; 
+                        Data_Cnt = 0;          //ensure count is zero
+                        UCB1TBCNT = 1;         // set packet length to 1
+                        UCB1CTLW0 |= UCTR;     // Transmitter mode
+                        UCB1IE |= UCTXIE0;     // Enable TX interrupt
+                        UCB1CTLW0 |= UCTXSTT;  // Start transmission 
                          for(i=0; i<100; i++){}  
                          rgb_control(2); __delay_cycles(500000); 
                          P4OUT &= ~(BIT3 | BIT2);           //heating and cooling off
@@ -166,6 +193,8 @@ __interrupt void Timer_B_ISR(void) {
     UCB1CTLW0 |= UCTXSTP;                          // Send STOP condition
 //-- ADC conversation (call ISR)
     ADCCTL0 |= ADCENC | ADCSC;
+
+    P6OUT ^= BIT6;
    
     TB0CCTL0 &= ~CCIFG;                            // Clear interrupt flag
 }

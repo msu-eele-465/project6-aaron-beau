@@ -13,7 +13,8 @@ directly driven to the off board LED bar display
 
 int lightbar(int count, int patt, uint8_t value){        //function to carry through each pattern
 
- if (patt == 1) {
+ if(patt == 0xA) {
+    
     // System is actively heating
     if (count == 0) {
         P1OUT |= BIT4; // Light 3
@@ -40,9 +41,8 @@ int lightbar(int count, int patt, uint8_t value){        //function to carry thr
         P1OUT |= BIT0; // Light 10
         count=0;
     }
-
 }
-else if (patt == 2){
+if(patt == 0xB){
     if (count == 0){
         P1OUT |= BIT0;           // Light 3
         count++;

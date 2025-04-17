@@ -5,6 +5,8 @@
 #ifndef LIGHTBAR
 #define LIGHTBAR
 
+#define SLAVE_ADDR 0x69
+
 #include <msp430.h>
 #include <stdint.h>
 #include "msp430fr2310.h"
