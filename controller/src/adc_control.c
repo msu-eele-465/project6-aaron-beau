@@ -30,22 +30,9 @@ void ADC_init(){
     ADCMCTL0 |= ADCINCH_8;      //ADC INPUT Channel = A8
    
     ADCIE |= ADCIE0;            //enable ADC IRQ
+   
     
 }
 
-void Send_ADC(int value) {
-   char Packet[] = {0x00};
-
-    //Send C to notify slave that temperature data is coming
-    UCB1I2CSA = 0x00E; Packet[0] = value; UCB1CTLW0 |= UCTXSTT;
-
-}
-
-void Send_plant_temp(int value){
-    char Packet[] = {0x00};
-
-     UCB1I2CSA = 0x00E; Packet[0] = value; UCB1CTLW0 |= UCTXSTT;
-
-}
 
 

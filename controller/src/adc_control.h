@@ -8,6 +8,5 @@
 // Function prototype
 
 void ADC_init();
-void send_plant_temp(int value);
-void Send_ADC(int value);
+
 #endif
