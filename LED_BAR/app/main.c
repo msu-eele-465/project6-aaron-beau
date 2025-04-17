@@ -165,10 +165,8 @@ __interrupt void EUSCI_B0_ISR(void)
             status = 10;
             Received = UCB0RXBUF;         // Read received byte
                                           // Force an ACK manually and
-            UCB0CTLW0 &= ~UCTXACK;        // Ensure ACK is sent
-            if(Received == 0xB){
-                wait = 1;
-            }
+            //UCB0CTLW0 &= ~UCTXACK;        // Ensure ACK is sent
+            
             pattspec=Received;
             
         case 0x12:                        // UCSTPIFG: Stop condition detected

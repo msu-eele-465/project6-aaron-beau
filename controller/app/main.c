@@ -113,6 +113,7 @@ __bis_SR_register(GIE);  // Enable global interrupts
                          rgb_control(2); __delay_cycles(500000);
                          LCD_clear_first_line(5); 
                          LCD_print("Match", 5);
+
                          while(plant_temperature_C < temperature_C){
                             P4OUT &= ~BIT3;         //set to heat
                             P4OUT |= BIT2;
